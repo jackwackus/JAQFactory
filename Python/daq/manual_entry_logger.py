@@ -1,3 +1,9 @@
+"""
+Author: Jack Connor
+Date Created: Unknown
+Last Modified: 1/26/2023
+"""
+
 import serial
 import time
 import datetime
