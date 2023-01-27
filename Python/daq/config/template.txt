@@ -1,0 +1,11 @@
+Instrument Name=
+Enabled=
+Communication Type=
+Connection Information=
+Stream=
+Read Interval=
+Write Interval=
+New File Interval=
+Output Directory=
+Delimiter= 
+Header String=
