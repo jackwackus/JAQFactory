@@ -139,7 +139,7 @@ def process_valid_command(enable_command, instrument_name, config_file_dic):
         '\nWould you like to enable or disable another instrument?',
         '\nIf no, press enter.',
         'If you would like to enable an instrument, enter "enable Instrument Name".',
-        'If you would like to disable an instrument, enter "disable Instrument name".',
+        'If you would like to disable an instrument, enter "disable Instrument Name".',
         'After enabling or disabling an instrument, you will be prompted with the option to enable or disable another instrument.\n'
         ])
 
@@ -214,7 +214,7 @@ def main():
         '\nWould you like to enable or disable an instrument?',
         '\nIf no, press enter.',
         'If you would like to enable an instrument, enter "enable Instrument Name".',
-        'If you would like to disable an instrument, enter "disable Instrument name".',
+        'If you would like to disable an instrument, enter "disable Instrument Name".',
         'After enabling or disabling an instrument, you will be prompted with the option to enable or disable another instrument.\n'
         ])
     print(print_string)
