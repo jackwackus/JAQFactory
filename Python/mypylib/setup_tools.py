@@ -1,7 +1,6 @@
 """
 Author: Jack Connor 
 Date Created: 4/14/2021
-Last Modified: 1/27/2023
 """
 
 import time
@@ -211,26 +210,6 @@ def create_serial_command(config):
             command = command.encode('ascii')
     return command
 
-def read_TCPIP_data(config):
-    """
-    Opens socket. Sends a command if config['Stream'] is False. Reads serial data. 
-    Args:
-        config (dict): dictionary containing all device connection information
-    Returns:
-        data_string: data string pulled from device
-    """
-    HOST = config['Connection Information']['HOST']
-    PORT = config['Connection Information']['PORT']
-    if not config['Stream']:
-        command = config['Connection Information']['Command']
-        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-            s.connect((HOST, PORT))
-            s.sendall(command.encode('ascii'))
-            if config['Connection Information'].get('Command Delay'):
-                time.sleep(config['Connection Information'].get('Command Delay'))
-            data_string = s.recv(1024)
-        return data_string
-
 def EndOfString_serial_read(serial_object, config):
     """
     Reads serial buffer until end of line character indicated by config.
@@ -263,120 +242,6 @@ def read_serial_stream(serial_object, read_interval):
         print(f'\nString length: {len(data)}')
         time.sleep(read_interval)
 
-def print_serial_command_response_loop(serial_object, t, config):
-    """
-    Continually writes command to instrument and reads response.
-    Args:
-        serial_object (serial.Serial): serial connection object
-        t (float): sampling period in seconds
-    Returns:
-        prints dataline when each line is recieved
-    """
-    cmd = create_serial_command(config)
-    while True:
-        time.sleep(t - time.time() % t)
-        serial_object.write(cmd)
-        line = b''
-        elapsed_t = 0
-        while True:
-            if elapsed_t > t:
-                print('missed dataline')
-                serial_object.close()
-                time.sleep(t - time.time() % t)
-                serial_object.open()
-                serial_object.read(serial_object.in_waiting)
-                serial_object.write(cmd)
-                line = b''
-                elapsed_t = 0
-            data = serial_object.read(serial_object.in_waiting)
-            if len(data) > 0:
-                line = line + data
-                if line.find(b'\n') > 0:
-                    print(line)
-                    line = b''
-                    break
-            elapsed_t += .1
-            time.sleep(.1)
-
-def print_serial_stream(serial_object):
-    """
-    Reads serial stream and prints data after each complete line is recieved.
-    Args:
-        serial_object (serial.Serial): serial connection object
-    Returns:
-        prints dataline when each line is recieved
-    """
-    line = b''
-    while True:
-        data = serial_object.read(serial_object.in_waiting)
-        if len(data) > 0:
-            line = line + data
-            if line.find(b'\n') > 0:
-                print(line)
-                line = b''
-        time.sleep(.1)
-
-def write_serial_stream(serial_object, writeFile):
-    """
-    Reads serial stream and writes data after each complete line is recieved.
-    Args:
-        serial_object (serial.Serial): serial connection object
-        writeFile (str): filename to write data to
-    Returns:
-        prints dataline when each line is recieved
-    """
-    data = serial_object.read(serial_object.in_waiting)
-    while len(data) > 0:
-        data = serial_object.read(serial_object.in_waiting)
-    line = b''
-    while True:
-        data = serial_object.read(serial_object.in_waiting)
-        if len(data) > 0:
-            line = line + data
-            if line.find(b'\n') > 0:
-                cr_index = line.find(b'\r')
-                nw_index = line.find(b'\n')
-                if cr_index > 0:
-                    cut_index = min(cr_index, nw_index)
-                else:
-                    cut_index = nw_index
-                write_line = line[:cut_index].decode('ascii')
-                print(write_line)
-                with open(writeFile, 'a') as f:
-                    f.write(write_line + '\n')
-                line = b''
-        time.sleep(.01)
-
-def write_arduino_stream(serial_object, writeFile):
-    """
-    Reads serial stream and writes data after each complete line is recieved.
-    Sends Arduino a command first to initialize stream.
-    Args:
-        serial_object (serial.Serial): serial connection object
-        writeFile (str): filename to write data to
-    Returns:
-        prints dataline when each line is recieved
-    """
-    serial_object.write('0'.encode('ascii'))
-    line = b''
-    while True:
-        data = serial_object.read(serial_object.in_waiting)
-        if len(data) > 0:
-            line = line + data
-            if line.find(b'\n') > 0:
-                cr_index = line.find(b'\r')
-                nw_index = line.find(b'\n')
-                if cr_index > 0:
-                    cut_index = min(cr_index, nw_index)
-                else:
-                    cut_index = nw_index
-                write_line = line[:cut_index].decode('ascii')
-                print(write_line)
-                with open(writeFile, 'a') as f:
-                    f.write(write_line + '\n')
-                line = b''
-        time.sleep(.01)
-
 def read_TCPIP_stream(socket_object, read_interval):
     """
     Reads TCP/IP stream at interval specified and prints line and length of line
@@ -391,6 +256,173 @@ def read_TCPIP_stream(socket_object, read_interval):
         print(f'\nString: {data}')
         print(f'\nString length: {len(data)}')
         time.sleep(read_interval)
+
+def read_ModbusSerial_registers(device_dict, config):
+    """
+    Reads modbus registers over serial and compiles a data string.
+    Args:
+        device_dict (dict): dictionary of minimalmodbus.Instrument objects
+        config (dict): instrument configuration dictionary
+    Returns:
+        data_string (str): data string consisting of register values 
+            separated by delimiter specified in config
+    """
+    #NOTE: These processes will have to be elaborated when new register types are encountered.
+    data_string = ""
+    n_parameter = 0
+    for device in device_dict:
+        for register in config['Integer Register Dictionary']: 
+            factor = config['Integer Register Dictionary'][register]
+            val = device_dict[device].read_register(register, factor)
+            if n_parameter == 0:
+                data_string += str(val)
+                n_parameter += 1
+            else:
+                data_string += config['Delimiter'] + str(val)
+    return data_string
+
+def read_ModbusIEEE(modbusTCP_object, start_register, float_register_type, LoSigFirst = True):
+    """
+    Adapted from https://stackoverflow.com/questions/59883083/convert-two-raw-values-to-32-bit-ieee-floating-point-number
+    Reads modbus data encoded with IEEE 754 (Institute of Electrical and Electronics Engineers Standard for Floating Point Arithmetic).
+    Reads 32 bits from two 16 bit registers and converts data to a floating point number.
+    Args:
+        modbusTCP_object (ModbusClient): modbus TCP/IP communication object
+        start_register (int): register address to begin reading from
+        float_register_type (str): register type - Input or Holding
+        LoSigFirst (bool): boolean indicating if less significant (lower order) register is first in the pair of registers
+            True: low significance register first
+            False: high significance register first
+    Returns:
+        value (float): floating point number encoded by data in registers
+        None if a decoding error occurs
+    """
+    if modbusTCP_object.open():
+        if float_register_type == 'Holding':
+            raw_data = modbusTCP_object.read_holding_registers(start_register, 2)
+        elif float_register_type == 'Input':
+            raw_data = modbusTCP_object.read_input_registers(start_register, 2)
+    else:
+        time.sleep(0.01)
+        return None
+    if not LoSigFirst:
+        raw_data.reverse()
+    LoSig_reg = raw_data[0]
+    HiSig_reg = raw_data[1]
+    try:
+        value = round(struct.unpack(
+                '!f',
+                bytes.fromhex(
+                    '{0:04x}'.format(HiSig_reg) + '{0:04x}'.format(LoSig_reg)
+                    )
+                )[0],6)
+    except:
+        print(f'Error parsing {start_register} {raw_data}')
+        modbusTCP_object.close()
+        time.sleep(.1)
+        return None
+    return value
+
+def read_ModbusTCP_registers(modbusTCP_object, config, write_metric_name = False):
+    """
+    Reads modbus TCP/IP registers specified in config and adds each value to a string, separated by the delimiter specified in config
+    Reads each register according to register type indicated in config
+    Args:
+        modbusTCP_object (ModbusClient): instrument modbus TCP/IP object
+        config (dict): instrument configuration dictionary
+        write_metric_name (bool): boolean directing whether or not to include metric names in data string
+    Returns:
+        data_string (str): data string consisting of all metrics contained by registers, separated by delimiter
+    """
+
+    data_string = ''
+    LoSigFirst = config['Connection Information']['LoSigFirst']
+    first_loop = True
+    if config.get('Float Register Dictionary'):
+        for element in config['Float Register Dictionary']:
+            if element == 'Float Register Type':
+                float_register_type = config['Float Register Dictionary'][element]
+                continue
+            if write_metric_name:
+                metric_name = element + ','
+            else:
+                metric_name = ''
+            address = config['Float Register Dictionary'][element] - config['Connection Information']['Register Address Offset']
+            value = None
+            n_try = 1
+            while value == None:
+                if n_try > 5:
+                    break
+                value = read_ModbusIEEE(modbusTCP_object, address, float_register_type, LoSigFirst)
+                n_try += 1
+            if first_loop:
+                data_string += f'{metric_name}{value}'
+                first_loop = False
+            else:
+                data_string += f',{metric_name}{value}'
+    if config.get('Unsigned 16 Bit Register Dictionary'):
+        for element in config['Unsigned 16 Bit Register Dictionary']:
+            if element == 'Unsigned 16 Register Type':
+                unsigned_register_type = config['Unsigned 16 Bit Register Dictionary'][element]
+                continue
+            if write_metric_name:
+                metric_name = element + ','
+            else:
+                metric_name = ''
+            address = config['Unsigned 16 Bit Register Dictionary'][element] - config['Connection Information']['Register Address Offset']
+            value = None
+            n_try = 1
+            while value == None:
+                if n_try > 5:
+                    break
+                if modbusTCP_object.open():
+                    if unsigned_register_type == 'Holding':
+                        value = modbusTCP_object.read_holding_registers(address, 1)[0]
+                    elif unsigned_register_type == 'Input':
+                        value = modbusTCP_object.read_input_registers(address, 1)[0]
+                else:
+                    value = None
+                    time.sleep(0.01)
+                n_try += 1
+            if data_string == '':
+                data_string += f'{metric_name}{value}'
+            else:
+                data_string += f',{metric_name}{value}'
+    if config.get('Unsigned 32 Bit Register Dictionary'):
+        for element in config['Unsigned 32 Bit Register Dictionary']:
+            if element == 'Unsigned 32 Register Type':
+                unsigned_register_type = config['Unsigned 32 Bit Register Dictionary'][element]
+                continue
+            if write_metric_name:
+                metric_name = element + ','
+            else:
+                metric_name = ''
+            address = config['Unsigned 32 Bit Register Dictionary'][element] - config['Connection Information']['Register Address Offset']
+            value = None
+            n_try = 1
+            while value == None:
+                if n_try > 5:
+                    break
+                if modbusTCP_object.open():
+                    if unsigned_register_type == 'Holding':
+                        data = modbusTCP_object.read_holding_registers(address, 2)
+                    elif unsigned_register_type == 'Input':
+                        data = modbusTCP_object.read_input_registers(address, 2)
+                    if not LoSigFirst:
+                        data.reverse()
+                    [RegLo, RegHi] = data
+                    value = '0x' + '{:04x}'.format(RegLo) + '{:04x}'.format(RegHi)
+                else:
+                    value = None
+                    time.sleep(0.01)
+                n_try += 1
+            if value == None:
+                value = 'NaN'
+            if data_string == '':
+                data_string += f'{metric_name}{value}'
+            else:
+                data_string += f',{metric_name}{value}'
+    return data_string
 
 def parse_data_line(line, delimiter):
     """
