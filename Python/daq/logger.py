@@ -595,7 +595,7 @@ def read_ModbusSerial_registers(device_dict, config):
                 data_string += config['Delimiter'] + str(val)
     return data_string
 
-def read_ModbusIEEE(modbusTCP_object, start_register, LoSigFirst = True):
+def read_ModbusIEEE(modbusTCP_object, start_register, float_register_type, LoSigFirst = True):
     """
     Adapted from https://stackoverflow.com/questions/59883083/convert-two-raw-values-to-32-bit-ieee-floating-point-number
     Reads modbus data encoded with IEEE 754 (Institute of Electrical and Electronics Engineers Standard for Floating Point Arithmetic).
@@ -603,6 +603,7 @@ def read_ModbusIEEE(modbusTCP_object, start_register, LoSigFirst = True):
     Args:
         modbusTCP_object (ModbusClient): modbus TCP/IP communication object
         start_register (int): register address to begin reading from
+        float_register_type (str): register type - Input or Holding
         LoSigFirst (bool): boolean indicating if less significant (lower order) register is first in the pair of registers
             True: low significance register first
             False: high significance register first
@@ -611,7 +612,10 @@ def read_ModbusIEEE(modbusTCP_object, start_register, LoSigFirst = True):
         None if a decoding error occurs
     """
     if modbusTCP_object.open():
-        raw_data = modbusTCP_object.read_holding_registers(start_register, 2)
+        if float_register_type == 'Holding':
+            raw_data = modbusTCP_object.read_holding_registers(start_register, 2)
+        elif float_register_type == 'Input':
+            raw_data = modbusTCP_object.read_input_registers(start_register, 2)
     else:
         time.sleep(0.01)
         return None
@@ -625,7 +629,7 @@ def read_ModbusIEEE(modbusTCP_object, start_register, LoSigFirst = True):
                 bytes.fromhex(
                     '{0:04x}'.format(HiSig_reg) + '{0:04x}'.format(LoSig_reg)
                     )
-                )[0],3)
+                )[0],6)
     except:
         print(f'Error parsing {start_register} {raw_data}')
         modbusTCP_object.close()
@@ -648,72 +652,90 @@ def read_ModbusTCP_registers(modbusTCP_object, config, write_metric_name = False
     data_string = ''
     LoSigFirst = config['Connection Information']['LoSigFirst']
     first_loop = True
-    for metric in config['Float Register Dictionary']:
-        if write_metric_name:
-            metric_name = metric + ','
-        else:
-            metric_name = ''
-        address = config['Float Register Dictionary'][metric] - config['Connection Information']['Register Address Offset']
-        value = None
-        n_try = 1
-        while value == None:
-            if n_try > 5:
-                break
-            value = read_ModbusIEEE(modbusTCP_object, address, LoSigFirst)
-            n_try += 1
-        if first_loop:
-            data_string += f'{metric_name}{value}'
-            first_loop = False
-        else:
-            data_string += f',{metric_name}{value}'
-    for metric in config['Unsigned 16 Bit Register Dictionary']:
-        if write_metric_name:
-            metric_name = metric + ','
-        else:
-            metric_name = ''
-        address = config['Unsigned 16 Bit Register Dictionary'][metric] - config['Connection Information']['Register Address Offset']
-        value = None
-        n_try = 1
-        while value == None:
-            if n_try > 5:
-                break
-            if modbusTCP_object.open():
-                value = modbusTCP_object.read_holding_registers(address, 1)[0]
+    if config.get('Float Register Dictionary'):
+        for element in config['Float Register Dictionary']:
+            if element == 'Float Register Type':
+                float_register_type = config['Float Register Dictionary'][element]
+                continue
+            if write_metric_name:
+                metric_name = element + ','
             else:
-                value = None
-                time.sleep(0.01)
-            n_try += 1
-        if data_string == '':
-            data_string += f'{metric_name}{value}'
-        else:
-            data_string += f',{metric_name}{value}'
-    for metric in config['Unsigned 32 Bit Register Dictionary']:
-        if write_metric_name:
-            metric_name = metric + ','
-        else:
-            metric_name = ''
-        address = config['Unsigned 32 Bit Register Dictionary'][metric] - config['Connection Information']['Register Address Offset']
-        value = None
-        n_try = 1
-        while value == None:
-            if n_try > 5:
-                break
-            if modbusTCP_object.open():
-                data = modbusTCP_object.read_holding_registers(address, 2)
-                if not LoSigFirst:
-                    data.reverse()
-                [RegLo, RegHi] = data
-                value = '0x' + '{:04x}'.format(RegLo) + '{:04x}'.format(RegHi)
+                metric_name = ''
+            address = config['Float Register Dictionary'][element] - config['Connection Information']['Register Address Offset']
+            value = None
+            n_try = 1
+            while value == None:
+                if n_try > 5:
+                    break
+                value = read_ModbusIEEE(modbusTCP_object, address, float_register_type, LoSigFirst)
+                n_try += 1
+            if first_loop:
+                data_string += f'{metric_name}{value}'
+                first_loop = False
             else:
-                value = None
-                time.sleep(0.01)
-            n_try += 1
-        if value == None:
-            value = 'NaN'
-        if data_string == '':
-            data_string += f'{metric_name}{value}'
-        else:
-            data_string += f',{metric_name}{value}'
+                data_string += f',{metric_name}{value}'
+    if config.get('Unsigned 16 Bit Register Dictionary'):
+        for element in config['Unsigned 16 Bit Register Dictionary']:
+            if element == 'Unsigned 16 Register Type':
+                unsigned_register_type = config['Unsigned 16 Bit Register Dictionary'][element]
+                continue
+            if write_metric_name:
+                metric_name = element + ','
+            else:
+                metric_name = ''
+            address = config['Unsigned 16 Bit Register Dictionary'][element] - config['Connection Information']['Register Address Offset']
+            value = None
+            n_try = 1
+            while value == None:
+                if n_try > 5:
+                    break
+                if modbusTCP_object.open():
+                    if unsigned_register_type == 'Holding':
+                        value = modbusTCP_object.read_holding_registers(address, 1)[0]
+                    elif unsigned_register_type == 'Input':
+                        value = modbusTCP_object.read_input_registers(address, 1)[0]
+                else:
+                    value = None
+                    time.sleep(0.01)
+                n_try += 1
+            if data_string == '':
+                data_string += f'{metric_name}{value}'
+            else:
+                data_string += f',{metric_name}{value}'
+    if config.get('Unsigned 32 Bit Register Dictionary'):
+        for element in config['Unsigned 32 Bit Register Dictionary']:
+            if element == 'Unsigned 32 Register Type':
+                unsigned_register_type = config['Unsigned 32 Bit Register Dictionary'][element]
+                continue
+            if write_metric_name:
+                metric_name = element + ','
+            else:
+                metric_name = ''
+            address = config['Unsigned 32 Bit Register Dictionary'][element] - config['Connection Information']['Register Address Offset']
+            value = None
+            n_try = 1
+            while value == None:
+                if n_try > 5:
+                    break
+                if modbusTCP_object.open():
+                    if unsigned_register_type == 'Holding':
+                        data = modbusTCP_object.read_holding_registers(address, 2)
+                    elif unsigned_register_type == 'Input':
+                        data = modbusTCP_object.read_input_registers(address, 2)
+                    if not LoSigFirst:
+                        data.reverse()
+                    [RegLo, RegHi] = data
+                    value = '0x' + '{:04x}'.format(RegLo) + '{:04x}'.format(RegHi)
+                else:
+                    value = None
+                    time.sleep(0.01)
+                n_try += 1
+            if value == None:
+                value = 'NaN'
+            if data_string == '':
+                data_string += f'{metric_name}{value}'
+            else:
+                data_string += f',{metric_name}{value}'
     return data_string
 
 def create_serial_stream_dic(config):

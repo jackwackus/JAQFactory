@@ -14,7 +14,7 @@ import numpy as np
 from pyModbusTCP.client import ModbusClient
 from os import path
 
-def read_daq_config(instrument_name, config_dir = 'C:\\Python\\daq\\config'):
+def read_daq_config(read_file = 'C:\\Python\\daq\\config\\G2401.txt'):
     """
     Reads an instrument configuration file and writes data to a dictionary
     Args:
@@ -22,7 +22,6 @@ def read_daq_config(instrument_name, config_dir = 'C:\\Python\\daq\\config'):
     Returns:
         config_dic (dict): dictionary containing configuration data
     """
-    read_file = f'{config_dir}\\{instrument_name}.txt'
     config_dic = {}
     conditional_read_list = [
             'Instrument Name',
@@ -31,9 +30,13 @@ def read_daq_config(instrument_name, config_dir = 'C:\\Python\\daq\\config'):
             ]
     with open(read_file) as f:
         for line in f:
+            if line.find('\n') > 0:
+                line = line[:-1]
             sep = line.find("=")
             object_name = line[0:sep]
-            object_value = line[sep+1:line.find("\n")]
+            if len(object_name) < 1:
+                continue
+            object_value = line[sep+1:]
             if object_name in conditional_read_list:
                 object_value = f'"{object_value}"'
             exec(f'config_dic["{object_name}"] = {object_value}')
