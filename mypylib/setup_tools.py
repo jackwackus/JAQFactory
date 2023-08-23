@@ -14,14 +14,16 @@ import numpy as np
 from pyModbusTCP.client import ModbusClient
 from os import path
 
-def read_daq_config(read_file = 'C:\\Python\\daq\\config\\G2401.txt'):
+def read_daq_config(instrument, config_dir = 'C:\\Python\\daq\\config'):
     """
     Reads an instrument configuration file and writes data to a dictionary
     Args:
-        read_file (str): path to configuration text file
+        instrument (str): instrument name
+        config_dir (str): path to configuration file directory
     Returns:
         config_dic (dict): dictionary containing configuration data
     """
+    read_file = f'{config_dir}\\{instrument}.txt'
     config_dic = {}
     conditional_read_list = [
             'Instrument Name',
