@@ -160,7 +160,7 @@ def main():
     system('cls')
 
     #Identify working directory
-    working_dir = getcwd
+    working_dir = getcwd()
 
     #Get PTR Zero Config
     config_file_dict = process_instrument_list(working_dir + '//config//')

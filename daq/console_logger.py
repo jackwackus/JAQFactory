@@ -277,7 +277,7 @@ def main():
     import argparse
 
     #Identify working directory
-    working_dir = getcwd
+    working_dir = getcwd()
 
     #Parse command line arguments
     parser = argparse.ArgumentParser(description='Data Writing Settings')
