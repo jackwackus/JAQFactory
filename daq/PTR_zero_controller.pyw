@@ -6,7 +6,7 @@ Date Created: 2/8/2023
 import time
 import sys
 import datetime
-from os import path, mkdir
+from os import path, mkdir, getcwd
 from logger import *
 
 def create_command_dict(config):
@@ -172,15 +172,18 @@ def main():
     #Establish instrument variable
     instrument = args.instrument_name
     
+    #Identify working directory
+    working_dir = getcwd
+
     #Generate dictionary of configuration file paths
-    config_file_dic = process_instrument_list()
+    config_file_dic = process_instrument_list(working_dir + '\\config\\')
 
     #Specify a directory for log files
-    log_dir = "C:\\Python\\daq\\logs\\"
+    log_dir = working_dir + '\\logs\\'
     
     #Specify a logger state file
     #This file stores user directives to continue running or to quit
-    logger_state_file = 'C:\\Python\\daq\\logger_state\\logger_state.txt'
+    logger_state_file = working_dir + '\\logger_state\\logger_state.txt'
 
     #If configuration file is available, generate instrument configuration dictionary
     #If instrument is enabled, initiate logger or stream_logger according to instrument configuration

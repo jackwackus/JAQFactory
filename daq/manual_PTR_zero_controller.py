@@ -1,12 +1,13 @@
 """
 Author: Jack Connor 
 Date Created: 2/6/2023
+Last Modified: 8/23/2023
 """
 
 import sys
 import time
 import msvcrt
-from os import path, mkdir, system
+from os import path, mkdir, system, getcwd
 from logger import *
 from datetime import datetime, timedelta
 
@@ -158,8 +159,11 @@ def main():
 
     system('cls')
 
+    #Identify working directory
+    working_dir = getcwd
+
     #Get PTR Zero Config
-    config_file_dict = process_instrument_list()
+    config_file_dict = process_instrument_list(working_dir + '//config//')
     config = read_daq_config(config_file_dict['PTR Zero'])
 
 

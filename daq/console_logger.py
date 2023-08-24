@@ -7,7 +7,7 @@ Last Modified: 1/26/2023
 import time
 import datetime
 import msvcrt
-from os import path, mkdir
+from os import path, mkdir, getcwd
 from logger import *
 
 def console_NewFileCheck(writeFile, config, NewFileSchedule, current_time):
@@ -276,6 +276,9 @@ def main():
 
     import argparse
 
+    #Identify working directory
+    working_dir = getcwd
+
     #Parse command line arguments
     parser = argparse.ArgumentParser(description='Data Writing Settings')
     parser.add_argument('-I', '--instrument_name', type=str, help='Name of instrument to log', metavar='', required=True)
@@ -285,7 +288,7 @@ def main():
     instrument = args.instrument_name
     
     #Generate dictionary of configuration file paths
-    config_file_dic = process_instrument_list()
+    config_file_dic = process_instrument_list(working_dir + '//config//')
 
     #If configuration file is available, generate instrument configuration dictionary and initiate console_logger or stream_console_logger accordingly
     if instrument in config_file_dic:

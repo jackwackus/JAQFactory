@@ -1,6 +1,7 @@
 """
 Author: Jack Connor 
 Date Created: 4/14/2021
+Last Modified: 8/23/2023
 """
 
 import time
@@ -14,7 +15,7 @@ import numpy as np
 from pyModbusTCP.client import ModbusClient
 from os import path
 
-def read_daq_config(instrument, config_dir = 'C:\\Python\\daq\\config'):
+def read_daq_config(instrument, config_dir = 'C:\\JAQFactory\\daq\\config'):
     """
     Reads an instrument configuration file and writes data to a dictionary
     Args:
@@ -23,6 +24,15 @@ def read_daq_config(instrument, config_dir = 'C:\\Python\\daq\\config'):
     Returns:
         config_dic (dict): dictionary containing configuration data
     """
+    if not path.exists(config_dir):
+        message = '\n'.join([
+            'Config file directory:',
+            f'{config_dir}',
+            'does not exist.',
+            'Specify the proper config file directory as the second argument of this function.'
+            ])
+        print(message)
+        return
     read_file = f'{config_dir}\\{instrument}.txt'
     config_dic = {}
     conditional_read_list = [
@@ -44,7 +54,7 @@ def read_daq_config(instrument, config_dir = 'C:\\Python\\daq\\config'):
             exec(f'config_dic["{object_name}"] = {object_value}')
     return config_dic
 
-def process_instrument_list(config_path = "C:\\Python\\daq\\config\\"):
+def process_instrument_list(config_path = "C:\\JAQFactory\\daq\\config\\"):
     """
     Reads in an instrument list from the configuration file directory and creates 
     a dictionary with instrument names as keys and instrument config file paths as values

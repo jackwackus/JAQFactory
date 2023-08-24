@@ -1,7 +1,7 @@
 """
 Author: Jack Connor 
 Date Created: 2/19/2021
-Last Modified: 1/26/2023
+Last Modified: 8/23/2023
 """
 
 import os
@@ -189,12 +189,15 @@ def main():
     Takes in command line arguments and calls functions
     """
 
+    #Find working directory
+    working_dir = os.getcwd()
+
     #Specify an error log file
-    error_log_file = "C:\\Python\\daq\\logs\\_initialize_logger_error.txt"
+    error_log_file = working_dir + "\\logs\\_initialize_logger_error.txt"
     sys.stderr = open(error_log_file, 'w')
 
     #Create dictionary with configuration file locations for all configured instruments
-    config_file_dic = process_instrument_list() 
+    config_file_dic = process_instrument_list(working_dir + "\\config\\") 
 
     #Make a program start-up statement
     print_string = '\n'.join([

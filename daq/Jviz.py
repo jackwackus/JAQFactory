@@ -1,7 +1,7 @@
 """
 Author: Jack Connor 
 Date Created: 3/22/2021
-Last Modified: 1/26/2023
+Last Modified: 8/23/2023
 """
 
 import os
@@ -220,8 +220,11 @@ def visualize(metric_viz_list, Jviz_config, time_window_size):
         displays animated visualization plots
     """
 
+    #Establish working directory
+    working_dir = os.getcwd()
+
     #Obtain instrument configurations
-    instrument_configs = create_instrument_configs(metric_viz_list)
+    instrument_configs = create_instrument_configs(metric_viz_list, config_path = working_dir + '\\config\\')
 
     #Establish number of plots variable
     n_plots = len(metric_viz_list)
@@ -404,9 +407,12 @@ def main():
 
     os.system('cls')
 
+    #Establish working directory
+    working_dir = os.getcwd()
+
     #Establish important data objects
-    config_file_dic = process_instrument_list()
-    Jviz_config = read_daq_config(read_file = 'C:\\Python\\daq\\config\\Jviz.txt') 
+    config_file_dic = process_instrument_list(working_dir + '\\config\\')
+    Jviz_config = read_daq_config(read_file = working_dir + '\\config\\Jviz.txt') 
     configured_instrument_list = []
     for element in Jviz_config:
         if element != 'Plot Frequency':

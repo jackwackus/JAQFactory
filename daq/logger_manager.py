@@ -1,7 +1,7 @@
 """
 Author: Jack Connor 
 Date Created: 2/19/2021
-Last Modified: 1/26/2023
+Last Modified: 8/23/2023
 """
 
 import os
@@ -114,7 +114,8 @@ def write_logger_state(state = 'Run'):
         Writes state to logger state file.
         If state is 'Quit', runs one minute countdown with quit messages
     """
-    logger_state_file = 'C:\\Python\\daq\\logger_state\\logger_state.txt'
+    working_dir = os.getcwd()
+    logger_state_file = working_dir + '\\logger_state\\logger_state.txt'
     with open(logger_state_file, 'w') as f:
         f.write(state)
     if state == 'Quit':
@@ -144,14 +145,17 @@ def main():
     Processes user commands. Breaks loop if command is 'Quit'.
     """
 
+    #Identify working directory
+    working_dir = os.getcwd()
+
     #Specify an error log file
-    error_log_file = "C:\\Python\\daq\\logs\\_logger_manager_error.txt"
+    error_log_file = working_dir + '\\logs\\_logger_manager_error.txt'
     sys.stderr = open(error_log_file, 'w')
 
     os.system('cls')
 
     #Create a list of enabled instruments
-    config_file_dic = process_instrument_list() 
+    config_file_dic = process_instrument_list(working_dir + '\\config\\') 
     enabled_instrument_list = create_enabled_instrument_list(config_file_dic) 
 
     #Intitialize manager and print start-up messages

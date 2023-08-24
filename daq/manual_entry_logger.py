@@ -1,7 +1,7 @@
 """
 Author: Jack Connor
 Date Created: Unknown
-Last Modified: 1/26/2023
+Last Modified: 8/23/2023
 """
 
 import serial
@@ -13,54 +13,35 @@ import pandas as pd
 from os import path
 
 def get_date_string():
-    Y = str(datetime.datetime.now().year)
-    m =str(datetime.datetime.now().month)
-    d =str(datetime.datetime.now().day)
-
-    if datetime.datetime.now().month < 10:
-        _m = "0"
-    else:
-        _m = ""
-
-    if datetime.datetime.now().day < 10:
-        _d = "0"
-    else:
-        _d = ""
-    date_string = Y + _m + m + _d + d
+    """
+    Generate date string for use in file names.
+    Args:
+        None
+    Returns:
+        date_string (str): date string of format %Y%m%d
+    """
+    current_time = datetime.datetime.now()
+    date_string = datetime.datetime.strftime(current_time, "%Y%m%d") 
     return date_string
 
 def get_timestamp(current_time):
-    Y = str(current_time.year)
-    m =str(current_time.month)
-    d =str(current_time.day)
-    H =str(current_time.hour)
-    M =str(current_time.minute)
-    S =str(current_time.second)
-    if current_time.month < 10:
-        _m = "0"
-    else:
-        _m = ""
-
-    if current_time.day < 10:
-        _d = "0"
-    else:
-        _d = ""
-    if current_time.hour < 10:
-        _H = "0"
-    else:
-        _H = ""
-    if current_time.minute < 10:
-        _M = "0"
-    else:
-        _M = ""
-    if current_time.second < 10:
-        _S = "0"
-    else:
-        _S = ""
-    dt = Y+"-"+_m+m+"-"+_d+d+" "+_H+H+":"+_M+M+":"+_S+S
-    return dt
+    """
+    Uses clock to make a timestamp
+    Args:
+        current_time (datetime.datetime): datetime object representing current time
+    Returns:
+        string containing timestamp
+    """
+    return datetime.datetime.strftime(current_time, "%Y-%m-%d %H:%M:%S")
 
 def logger(writeFile):
+    """
+    Runs loop to process user input and write data when input is provided.
+    Args:
+        writeFile (str): path to write data when input is provided
+    Returns:
+        Writes data to writeFile and notifies user of recorded data
+    """
     i = 0
     loop = True
     dic = {'Timestamp': ['None'], 'Value': ['None']} 
@@ -99,10 +80,16 @@ def logger(writeFile):
         dic['Value'] += [value]
 
 def main():
+    """
+    Processes command line arguments and calls functions to run the manual data entry program.
+    """
     import argparse
 
+    #Identify working directory
+    working_dir = os.getcwd()
+
     parser = argparse.ArgumentParser(description='COM and Data Writing Settings')
-    parser.add_argument('-d', '--write_dir', type=str, help='Directory to save datafile', default='C:\\Python\\daq\\data\\Manual Logger')
+    parser.add_argument('-d', '--write_dir', type=str, help='Directory to save datafile', default= working_dir + '\\data\\Manual Logger')
     args = parser.parse_args()
 
     write_directory = args.write_dir

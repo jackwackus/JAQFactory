@@ -1,7 +1,7 @@
 """
 Author: Jack Connor
 Date Created: 9/13/2021
-Last Modified: 1/26/2023
+Last Modified: 8/23/2023
 """
 
 import os
@@ -24,8 +24,11 @@ def main():
     #Establish instrument variable
     instrument = args.instrument_name
     
+    #Identify working directory
+    working_dir = os.getcwd()
+
     #Generate dictionary of configuration file paths
-    config_file_dic = process_instrument_list()
+    config_file_dic = process_instrument_list(working_dir + '\\config\\')
 
     os.system('cls')
     if instrument in config_file_dic:

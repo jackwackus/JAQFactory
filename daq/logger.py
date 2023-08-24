@@ -1,7 +1,7 @@
 """
 Author: Jack Connor 
 Date Created: 1/26/2021
-Last Modified: 1/27/2023
+Last Modified: 8/23/2023
 """
 
 import time
@@ -13,7 +13,7 @@ import struct
 import minimalmodbus
 import numpy as np
 from pyModbusTCP.client import ModbusClient
-from os import path, mkdir
+from os import path, mkdir, getcwd
 
 def read_daq_config(read_file = 'C:\\Python\\daq\\config\\G2401.txt'):
     """
@@ -1104,18 +1104,21 @@ def main():
     parser.add_argument('-I', '--instrument_name', type=str, help='Name of instrument to log', metavar='', required=True)
     args = parser.parse_args()
 
+    #Establish working directory
+    working_dir = getcwd()
+
     #Establish instrument variable
     instrument = args.instrument_name
     
     #Generate dictionary of configuration file paths
-    config_file_dic = process_instrument_list()
+    config_file_dic = process_instrument_list(working_dir + '\\config\\')
 
     #Specify a directory for log files
-    log_dir = "C:\\Python\\daq\\logs\\"
+    log_dir = working_dir + '\\logs\\'
     
     #Specify a logger state file
     #This file stores user directives to continue running or to quit
-    logger_state_file = 'C:\\Python\\daq\\logger_state\\logger_state.txt'
+    logger_state_file = working_dir + '\\logger_state\\logger_state.txt'
 
     #If configuration file is available, generate instrument configuration dictionary
     #If instrument is enabled, initiate logger or stream_logger according to instrument configuration
