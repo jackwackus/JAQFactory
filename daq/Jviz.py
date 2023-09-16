@@ -395,7 +395,7 @@ def visualize(metric_viz_list, Jviz_config, time_window_size):
             n_inst += 1
 
     #Run matplotlib function that iterates through animate function at specified time interval
-    ani = animation.FuncAnimation(fig, animate, init_func = init, fargs=(plot_dict, instrument_configs), interval=plot_update_interval)
+    ani = animation.FuncAnimation(fig, animate, init_func = init, fargs=(plot_dict, instrument_configs), interval=plot_update_interval, cache_frame_data=False)
 
     #Display figure
     plt.show()
