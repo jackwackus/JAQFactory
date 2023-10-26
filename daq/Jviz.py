@@ -13,7 +13,7 @@ import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 from matplotlib.ticker import (MultipleLocator, AutoMinorLocator, NullFormatter)
 
-def read_daq_config(read_file = 'C:\\Python\\daq\\config\\G2401.txt'):
+def read_daq_config(read_file = 'C:\\JAQFactory\\daq\\config\\G2401.txt'):
     """
     Reads an instrument configuration file and writes data to a dictionary
     Args:
@@ -41,7 +41,7 @@ def read_daq_config(read_file = 'C:\\Python\\daq\\config\\G2401.txt'):
             exec(f'config_dic["{object_name}"] = {object_value}')
     return config_dic
 
-def process_instrument_list(config_path = "C:\\Python\\daq\\config\\"):
+def process_instrument_list(config_path = "C:\\JAQFactory\\daq\\config\\"):
     """
     Reads in an instrument list from the configuration file directory and creates 
     a dictionary with instrument names as keys and instrument config file paths as values
@@ -125,11 +125,12 @@ def create_instrument_configs(metric_viz_list, config_path = "C:\\Python\\daq\\c
         instrument_configs[instrument[0]] = read_daq_config(config_file_path)
     return instrument_configs
 
-def pull_last_data_line(config):
+def pull_last_data_line(config, recursion_depth = 0):
     """
     Searches instrument output directory for most recent file and pulls last line from that file.
     Args:
         config (dict): instrument configuration dictionary
+        recursion_depth (int): number of times function has been called recursively
     Returns:
         last_line (str): last recorded dataline for instrument
     """
@@ -142,7 +143,13 @@ def pull_last_data_line(config):
     try:
         latest_file = max(list_of_files, key=os.path.getctime)
     except FileNotFoundError:
-        return None
+        #print('no file')
+        recursion_depth += 1
+        if recursion_depth < 977:
+            time.sleep(0.5)
+            return pull_last_data_line(config, recursion_depth)
+        else:
+            return None
     if latest_file[-4:] == ".dat":
         try:
             with open(latest_file, 'r') as f:
@@ -152,7 +159,13 @@ def pull_last_data_line(config):
         except:
             return None
     else:
-        return None
+        #print('no file')
+        recursion_depth += 1
+        if recursion_depth < 977:
+            time.sleep(0.5)
+            return pull_last_data_line(config, recursion_depth)
+        else:
+            return None
     return last_line
 
 def parse_data_line(line, delimiter, data_index):
@@ -191,7 +204,7 @@ def run_viz(metric_viz_list, Jviz_config):
     """
     plotting_message_string = '\n'.join([
         'Jviz',
-        f'\nDashboard opened. Currently plotting:'
+        f'\nDashboard will open when data is available. Selected Plots:'
         ])
     os.system('cls')
     print('Input the number of minutes you would like to be plotted.\n')
@@ -207,7 +220,7 @@ def run_viz(metric_viz_list, Jviz_config):
     for instrument in metric_viz_list:
         metric = instrument[0] + ' ' + instrument[1]
         print(metric)
-    print('\nExit Dashboard to change plots or quit program.')
+    print()
     visualize(metric_viz_list, Jviz_config, n_seconds)
 
 def visualize(metric_viz_list, Jviz_config, time_window_size):
@@ -265,10 +278,13 @@ def visualize(metric_viz_list, Jviz_config, time_window_size):
             #Pull most recent instrument data, attempt to parse
             #If error, update time and copy previous data value
             config = instrument_configs[instrument]
+            print(f'Waiting for first {instrument} {parameter} data point.')
             data_line = pull_last_data_line(config)
             try:
                 x, y = parse_data_line(data_line, config['Delimiter'], Jviz_config[instrument][parameter])
+                print(f'First {instrument} {parameter} data point found.')
             except:
+                print(f'No {instrument} {parameter} data found. Initializing plots with exception.')
                 x = '00:00:00'
                 y = 0
 
@@ -309,7 +325,9 @@ def visualize(metric_viz_list, Jviz_config, time_window_size):
 
             #Step n_inst
             n_inst += 1
+        print('\nDashboard now open.\nExit dashboard to change plots or quit program.')
         return plot_dict
+
     plot_dict = plot_first_frame(plot_dict, instrument_configs)
 
     #Set plot update interval. This should be the data frequency of the slowest instrument.

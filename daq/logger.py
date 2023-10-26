@@ -15,7 +15,7 @@ import numpy as np
 from pyModbusTCP.client import ModbusClient
 from os import path, mkdir, getcwd
 
-def read_daq_config(read_file = 'C:\\Python\\daq\\config\\G2401.txt'):
+def read_daq_config(read_file = 'C:\\JAQFactory\\daq\\config\\G2401.txt'):
     """
     Reads an instrument configuration file and writes data to a dictionary
     Args:
@@ -92,7 +92,7 @@ def create_writeFile_name(config, current_time):
     writeFile = output_dir + fileName
     return writeFile
 
-def process_instrument_list(config_path = "C:\\Python\\daq\\config\\"):
+def process_instrument_list(config_path = "C:\\JAQFactory\\daq\\config\\"):
     """
     Reads in an instrument list from the configuration file directory and creates 
     a dictionary with instrument names as keys and instrument config file paths as values
@@ -650,6 +650,7 @@ def read_ModbusTCP_registers(modbusTCP_object, config, write_metric_name = False
     """
 
     data_string = ''
+    delimiter = config['Delimiter']
     LoSigFirst = config['Connection Information']['LoSigFirst']
     first_loop = True
     if config.get('Float Register Dictionary'):
@@ -658,7 +659,7 @@ def read_ModbusTCP_registers(modbusTCP_object, config, write_metric_name = False
                 float_register_type = config['Float Register Dictionary'][element]
                 continue
             if write_metric_name:
-                metric_name = element + ','
+                metric_name = element + delimiter
             else:
                 metric_name = ''
             address = config['Float Register Dictionary'][element] - config['Connection Information']['Register Address Offset']
@@ -673,14 +674,14 @@ def read_ModbusTCP_registers(modbusTCP_object, config, write_metric_name = False
                 data_string += f'{metric_name}{value}'
                 first_loop = False
             else:
-                data_string += f',{metric_name}{value}'
+                data_string += f'{delimiter}{metric_name}{value}'
     if config.get('Unsigned 16 Bit Register Dictionary'):
         for element in config['Unsigned 16 Bit Register Dictionary']:
             if element == 'Unsigned 16 Register Type':
                 unsigned_register_type = config['Unsigned 16 Bit Register Dictionary'][element]
                 continue
             if write_metric_name:
-                metric_name = element + ','
+                metric_name = element + delimiter
             else:
                 metric_name = ''
             address = config['Unsigned 16 Bit Register Dictionary'][element] - config['Connection Information']['Register Address Offset']
@@ -701,14 +702,14 @@ def read_ModbusTCP_registers(modbusTCP_object, config, write_metric_name = False
             if data_string == '':
                 data_string += f'{metric_name}{value}'
             else:
-                data_string += f',{metric_name}{value}'
+                data_string += f'{delimiter}{metric_name}{value}'
     if config.get('Unsigned 32 Bit Register Dictionary'):
         for element in config['Unsigned 32 Bit Register Dictionary']:
             if element == 'Unsigned 32 Register Type':
                 unsigned_register_type = config['Unsigned 32 Bit Register Dictionary'][element]
                 continue
             if write_metric_name:
-                metric_name = element + ','
+                metric_name = element + delimiter
             else:
                 metric_name = ''
             address = config['Unsigned 32 Bit Register Dictionary'][element] - config['Connection Information']['Register Address Offset']
@@ -735,7 +736,7 @@ def read_ModbusTCP_registers(modbusTCP_object, config, write_metric_name = False
             if data_string == '':
                 data_string += f'{metric_name}{value}'
             else:
-                data_string += f',{metric_name}{value}'
+                data_string += f'{delimiter}{metric_name}{value}'
     return data_string
 
 def create_serial_stream_dic(config):

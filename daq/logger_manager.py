@@ -8,7 +8,7 @@ import os
 import sys
 import time
 
-def read_daq_config(read_file = 'C:\\Python\\daq\\config\\G2401.txt'):
+def read_daq_config(read_file = 'C:\\JAQFactory\\daq\\config\\G2401.txt'):
     """
     Reads an instrument configuration file and writes data to a dictionary
     Args:
@@ -36,7 +36,7 @@ def read_daq_config(read_file = 'C:\\Python\\daq\\config\\G2401.txt'):
             exec(f'config_dic["{object_name}"] = {object_value}')
     return config_dic
 
-def process_instrument_list(config_path = "C:\\Python\\daq\\config\\"):
+def process_instrument_list(config_path = "C:\\JAQFactory\\daq\\config\\"):
     """
     Reads in an instrument list from the configuration file directory and creates 
     a dictionary with instrument names as keys and instrument config file paths as values
@@ -71,14 +71,18 @@ def create_enabled_instrument_list(config_file_dic):
             enabled_instrument_list += [instrument]
     return enabled_instrument_list
 
-def print_data_line(config):
+def print_data_line(config, recursion_depth):
     """
     Searches instrument output directory for most recent file and prints last line from that file
     Args:
         config (dict): instrument configuration dictionary
+        recursion_depth (int): number of times function has been called recursively
     Returns:
         Prints most recent dataline to console
     """
+    if recursion_depth == 1:
+        os.system('cls')
+        print('JAQFactory Manager\n\nWaiting for data...\nIf this takes too long, close and reopen JAQFactory Manager.')
     data_dir = config['Output Directory']
     list_of_files = os.listdir(data_dir)
     i = 0
@@ -93,13 +97,24 @@ def print_data_line(config):
                     pass
                 last_line = line
         except:
-            last_line = "Last lined pulled by parser. Try again."
+            recursion_depth += 1
+            if recursion_depth < 994:
+                time.sleep(0.5)
+                return print_data_line(config, recursion_depth)
+            else:
+                last_line = 'Data not found.'
     else:
-        last_line = "Last lined pulled by parser. Try again."
+        recursion_depth += 1
+        if recursion_depth < 994:
+            time.sleep(0.5)
+            return print_data_line(config, recursion_depth)
+        else:
+            last_line = 'Data not found.'
     print_string = '\n'.join([
         'JAQFactory Manager',
         f'\nLast Recorded Dataline for {config["Instrument Name"]}:\n',
         ])
+    os.system('cls')
     print(print_string)
     if config["Header String"] != None:
         print(config["Header String"])
@@ -128,7 +143,7 @@ def write_logger_state(state = 'Run'):
                 f'All loggers will shutdown in {count_down_list[-element]} seconds.\n'
                 ])
             print(print_string)
-            time.sleep(1)
+            time.sleep(1 - time.time() % 1)
         print_string = '\n'.join([
             'JAQFactory Manager',
             '\nAll loggers have shut down. Logging Terminated.',
@@ -177,9 +192,8 @@ def main():
     user_command = input()
     while user_command != 'Quit':
         if user_command in config_file_dic:
-            os.system('cls')
             config = read_daq_config(config_file_dic[user_command])
-            print_data_line(config)
+            print_data_line(config, 0)
             print('\n'.join(welcome_string_list[2:]))
             user_command = input()
         else:

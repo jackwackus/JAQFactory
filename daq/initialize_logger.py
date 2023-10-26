@@ -9,7 +9,7 @@ import sys
 import time
 import pandas as pd
 
-def read_daq_config(read_file = 'C:\\Python\\daq\\config\\G2401.txt'):
+def read_daq_config(read_file = 'C:\\JAQFactory\\daq\\config\\G2401.txt'):
     """
     Reads an instrument configuration file and writes data to a dictionary
     Args:
@@ -37,7 +37,7 @@ def read_daq_config(read_file = 'C:\\Python\\daq\\config\\G2401.txt'):
             exec(f'config_dic["{object_name}"] = {object_value}')
     return config_dic
 
-def process_instrument_list(config_path = "C:\\Python\\daq\\config\\"):
+def process_instrument_list(config_path = "C:\\JAQFactory\\daq\\config\\"):
     """
     Reads in an instrument list from the configuration file directory and creates 
     a dictionary with instrument names as keys and instrument config file paths as values
