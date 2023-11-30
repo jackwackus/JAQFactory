@@ -35,6 +35,8 @@ def read_daq_config(instrument, config_dir = 'C:\\JAQFactory\\daq\\config'):
         return
     read_file = f'{config_dir}\\{instrument}.txt'
     config_dic = {}
+    # Conditionally read objects are objects that will be interpreted
+    # as strings without being enclosed in quotes in config file.
     conditional_read_list = [
             'Instrument Name',
             'Communication Type',
@@ -51,6 +53,9 @@ def read_daq_config(instrument, config_dir = 'C:\\JAQFactory\\daq\\config'):
             object_value = line[sep+1:]
             if object_name in conditional_read_list:
                 object_value = f'"{object_value}"'
+            # exec is used so that boolean and numerical objects that are
+            # read in as strings will be directly interpreted as
+            # boolean or numerical without additional code.
             exec(f'config_dic["{object_name}"] = {object_value}')
     return config_dic
 
